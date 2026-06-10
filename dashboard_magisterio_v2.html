@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — Magistério com Elas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F2F0EC;
+  --surface: #FFFFFF;
+  --surface2: #E8E6E0;
+  --border: rgba(0,0,0,0.07);
+  --border2: rgba(0,0,0,0.13);
+  --text: #1A1915;
+  --text2: #6B6960;
+  --text3: #A8A69E;
+  --green: #1B6B45;
+  --green-light: #E8F5EE;
+  --blue: #1D4ED8;
+  --pink: #C2355E;
+  --amber: #B45309;
+  --purple: #5B21B6;
+  --teal: #0F766E;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+.container { max-width: 1040px; margin: 0 auto; }
+
+/* HEADER */
+header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.header-left h1 {
+  font-family: var(--font-head);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.4px;
+  line-height: 1.2;
+}
+.header-left p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 5px;
+  letter-spacing: .01em;
+}
+.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.status-pill {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text2);
+  white-space: nowrap;
+}
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #16A34A; flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(22,163,74,.15);
+}
+.dot.loading { background: #D97706; box-shadow: 0 0 0 3px rgba(217,119,6,.15); animation: pulse 1.2s infinite; }
+.dot.error   { background: #DC2626; box-shadow: 0 0 0 3px rgba(220,38,38,.15); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.btn-refresh {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--text); color: #fff;
+  border: none; border-radius: 100px;
+  padding: 7px 16px; font-size: 12px;
+  font-family: var(--font-mono);
+  cursor: pointer; transition: opacity .15s;
+}
+.btn-refresh:hover { opacity: .82; }
+.btn-refresh svg { width: 13px; height: 13px; }
+
+/* METRICS */
+.metrics {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 2rem;
+}
+.metric {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.metric.highlight {
+  background: var(--green);
+  color: #fff;
+}
+.metric label {
+  display: block;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.metric.highlight label { color: rgba(255,255,255,.6); }
+.metric .val {
+  font-family: var(--font-head);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+.metric.highlight .val { color: #fff; font-size: 40px; }
+.metric .sub {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  margin-top: 4px;
+}
+.metric .sub-val {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.metric.highlight .sub { color: rgba(255,255,255,.55); }
+
+/* SECTION LABEL */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text3);
+  margin-bottom: 10px;
+  margin-top: 2rem;
+}
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 1.3rem;
+}
+.card-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text3);
+  margin-bottom: 1rem;
+}
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.full { margin-top: 12px; }
+
+/* LEGEND */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 8px 16px;
+  margin-top: 1rem;
+}
+.leg-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-family: var(--font-mono);
+  color: var(--text2);
+}
+.leg-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+
+/* BARS (utm_content) */
+.bar-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.bar-row:last-child { border-bottom: none; }
+.bar-label {
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar-track {
+  background: var(--surface2);
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; border-radius: 4px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+.bar-count { font-size: 11.5px; font-family: var(--font-mono); color: var(--text2); text-align: right; }
+
+/* GROWTH CHART */
+.growth-wrap { height: 160px; position: relative; }
+
+/* PROFESSOR CARDS */
+.prof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 0; }
+.prof-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 1.1rem;
+  position: relative;
+  overflow: hidden;
+}
+.prof-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.prof-card.c-an::before { background: var(--blue); }
+.prof-card.c-fe::before { background: var(--pink); }
+.prof-card.c-so::before { background: var(--amber); }
+.prof-card.c-jt::before { background: var(--green); }
+
+.prof-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  font-family: var(--font-head); font-size: 11px; font-weight: 700;
+  margin-bottom: 8px;
+}
+.c-an .prof-badge { background: #DBEAFE; color: var(--blue); }
+.c-fe .prof-badge { background: #FCE7F3; color: var(--pink); }
+.c-so .prof-badge { background: #FEF3C7; color: var(--amber); }
+.c-jt .prof-badge { background: var(--green-light); color: var(--green); }
+
+.prof-name {
+  font-family: var(--font-head);
+  font-size: 14px; font-weight: 600; margin-bottom: 2px;
+}
+.prof-count {
+  font-family: var(--font-head);
+  font-size: 28px; font-weight: 700; line-height: 1.1; margin-bottom: 2px;
+}
+.prof-pct {
+  font-size: 11px; font-family: var(--font-mono); color: var(--text3); margin-bottom: 10px;
+}
+.prof-sources { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+.prof-src-row {
+  display: flex; justify-content: space-between;
+  font-size: 11px; font-family: var(--font-mono);
+  color: var(--text2); padding: 2px 0;
+}
+.prof-src-row span:last-child { color: var(--text); font-weight: 500; }
+
+/* ANALYSIS */
+.analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 0; }
+.analysis-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .85rem 1rem;
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; line-height: 1.5; color: var(--text2);
+}
+.analysis-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 5px;
+}
+
+/* RANKING TABLE */
+.rank-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.rank-table th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text3);
+  padding: 0 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border2);
+}
+.rank-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  color: var(--text2);
+  vertical-align: middle;
+}
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-table td:nth-child(4) { font-weight: 500; color: var(--text); text-align: right; }
+.rank-table td:nth-child(5) { width: 120px; }
+.medium-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .04em;
+}
+.pill-indicacao { background: #DCFCE7; color: #15803D; }
+.pill-social    { background: #DBEAFE; color: #1D4ED8; }
+
+.rank-bar-wrap { height: 5px; background: var(--surface2); border-radius: 3px; }
+.rank-bar-fill { height: 5px; border-radius: 3px; }
+
+/* LOADING SKELETON */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--bg) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 4px;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* FOOTER */
+footer {
+  text-align: center;
+  margin-top: 3rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* RESPONSIVE */
+@media (max-width: 780px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .metrics .metric.highlight { grid-column: 1 / -1; }
+  .grid2 { grid-template-columns: 1fr; }
+  .prof-grid { grid-template-columns: repeat(2, 1fr); }
+  .analysis-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .prof-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-left">
+      <h1>Magistério com Elas</h1>
+      <p>captação de leads · atualização automática via Google Sheets</p>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">
+        <span class="dot loading" id="statusDot"></span>
+        <span id="statusText">Conectando...</span>
+      </div>
+      <button class="btn-refresh" onclick="loadData()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c1.7 0 3.2.77 4.24 2"/>
+          <path d="M14 2v3h-3"/>
+        </svg>
+        Atualizar agora
+      </button>
+    </div>
+  </header>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics" id="metrics">
+    <div class="metric highlight">
+      <label>Total de leads</label>
+      <div class="val" id="m-total">—</div>
+      <div class="sub">todos os canais</div>
+    </div>
+    <div class="metric">
+      <label>Top fonte</label>
+      <div class="val sub-val" id="m-topsrc">—</div>
+      <div class="sub" id="m-topsrc-sub">—</div>
+    </div>
+    <div class="metric">
+      <label>Fontes ativas</label>
+      <div class="val" id="m-fontes">—</div>
+      <div class="sub">utm_source</div>
+    </div>
+    <div class="metric">
+      <label>Campanhas</label>
+      <div class="val" id="m-camp">—</div>
+      <div class="sub">utm_campaign</div>
+    </div>
+    <div class="metric">
+      <label>Dias ativos</label>
+      <div class="val" id="m-dias">—</div>
+      <div class="sub">com captação</div>
+    </div>
+  </div>
+
+  <!-- ORIGEM -->
+  <p class="section-label">Origem dos leads</p>
+  <div class="grid2">
+    <div class="card">
+      <p class="card-title">Por fonte (utm_source)</p>
+      <div style="position:relative;height:180px"><canvas id="srcChart"></canvas></div>
+      <div class="legend" id="srcLeg"></div>
+    </div>
+    <div class="card">
+      <p class="card-title">Por medium (utm_medium)</p>
+      <div style="position:relative;height:180px"><canvas id="medChart"></canvas></div>
+      <div class="legend" id="medLeg"></div>
+    </div>
+  </div>
+
+  <div class="card full">
+    <p class="card-title">Por conteúdo (utm_content)</p>
+    <div id="contentBars"></div>
+  </div>
+
+  <!-- CRESCIMENTO -->
+  <p class="section-label">Crescimento</p>
+  <div class="card">
+    <p class="card-title">Leads por dia (subscribed_at)</p>
+    <div class="growth-wrap"><canvas id="growthChart"></canvas></div>
+  </div>
+
+  <!-- POR PROFESSORA -->
+  <p class="section-label">Por professora</p>
+  <div class="prof-grid" id="profGrid"></div>
+
+  <!-- ANÁLISE AUTOMÁTICA -->
+  <p class="section-label">Análise automática</p>
+  <div class="analysis-grid" id="analysisGrid"></div>
+
+  <!-- RANKING -->
+  <p class="section-label">Ranking detalhado</p>
+  <div class="card">
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th>Fonte</th>
+          <th>Medium</th>
+          <th>Conteúdo</th>
+          <th style="text-align:right">Leads</th>
+          <th>Part.</th>
+        </tr>
+      </thead>
+      <tbody id="rankTable"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text3);font-family:var(--font-mono)">Carregando dados...</td></tr></tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer id="footer">Dashboard conectado ao Google Sheets</footer>
+
+<script>
+// URL direta do Google Sheets (funciona quando hospedado em https://)
+const CSV_URL_DIRECT = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpBDRGUfuFfwXmUwwhVsIZ4W3TU5ie5uq29n8YY38wHAlb2toA3NItihpf0wepRiAnfG5lRt0IuOFY/pub?gid=0&single=true&output=csv';
+// Proxies CORS para uso como arquivo local (file://) — tenta em sequência
+const PROXIES = [
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+];
+
+const PALETTE = ['#1B6B45','#1D4ED8','#C2355E','#B45309','#5B21B6','#0F766E','#9333EA','#0369A1','#15803D','#B91C1C','#92400E','#1E40AF'];
+
+// ─── PROFESSOR DETECTION ──────────────────────────────────────────────────────
+// REGRA CORRIGIDA:
+// "juntas" = conteúdo compartilhado/sem professora específica → não atribui a ninguém
+// youtube_juntas (juntas_canal_youtube) → visão geral (Juntas)
+// Professoras identificadas por nome no utm_content:
+//   Ana Lúcia → "ana" mas NÃO "sonia", NÃO "fernanda", NÃO "juntas"
+//   Fernanda  → "fernanda"
+//   Sônia     → "sonia"
+//   Juntas / visão geral → "juntas" (incluindo juntas_canal_youtube)
+
+function detectProf(row) {
+  const c = (row.utm_content || '').toLowerCase();
+  const s = (row.utm_source  || '').toLowerCase();
+
+  // "juntas" = canal/conteúdo coletivo → NÃO é professora individual
+  if (c.includes('juntas')) return 'juntas';
+  if (c.includes('fernanda')) return 'fernanda';
+  if (c.includes('sonia') || c.includes('sônia')) return 'sonia';
+  // "ana" mas não "juntas" (já filtrado acima)
+  if (c.includes('ana')) return 'ana';
+
+  return null; // não identificado
+}
+
+// ─── CSV PARSER ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  // Normaliza quebras de linha (\r\n, \r, \n)
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  // Divide respeitando campos entre aspas (campos podem ter \n interno)
+  const rows = [];
+  let cur = '', inQ = false, fields = [];
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; } // aspas escapadas ""
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      fields.push(cur.trim()); cur = '';
+    } else if (c === '\n' && !inQ) {
+      fields.push(cur.trim()); cur = '';
+      rows.push(fields); fields = [];
+    } else {
+      cur += c;
+    }
+  }
+  if (cur || fields.length) { fields.push(cur.trim()); rows.push(fields); }
+
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.replace(/^"|"$/g, '').trim());
+  
+  return rows.slice(1)
+    .filter(r => r.some(v => v.trim() !== '')) // remove linhas completamente vazias
+    .map(vals => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = (vals[i] || '').trim());
+      return obj;
+    });
+}
+
+// ─── CHARTS ───────────────────────────────────────────────────────────────────
+let charts = {};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function donut(id, labels, data, colors) {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverBorderWidth: 0 }] },
+    options: {
+      cutout: '66%', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.raw} leads (${Math.round(ctx.raw/ctx.dataset.data.reduce((a,b)=>a+b,0)*100)}%)`
+        }
+      }}
+    }
+  });
+}
+
+function lineChart(id, labels, data) {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: data.map(v => v === Math.max(...data) ? '#1B6B45' : '#C5E8D7'),
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.raw} leads` } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 10 }, color: '#A8A69E', maxRotation: 45 } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 10 }, color: '#A8A69E' }, border: { display: false } }
+      }
+    }
+  });
+}
+
+function buildLegend(elId, labels, values, colors) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = labels.map((l,i) => `
+    <div class="leg-item">
+      <span class="leg-dot" style="background:${colors[i]}"></span>
+      <span>${l} <strong style="color:var(--text)">${values[i]}</strong></span>
+    </div>`).join('');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function count(rows, field) {
+  const map = {};
+  rows.forEach(r => { const v = (r[field] || 'desconhecido').trim() || 'desconhecido'; map[v] = (map[v] || 0) + 1; });
+  return Object.entries(map).sort((a,b) => b[1]-a[1]);
+}
+
+function render(rows) {
+  const total = rows.length;
+
+  // METRICS
+  const srcCnt  = count(rows, 'utm_source');
+  const campCnt = count(rows, 'utm_campaign');
+  const dates   = rows.map(r => r.subscribed_at).filter(Boolean);
+  const uniqueDates = new Set(dates.map(d => d.split(' ')[0])).size;
+
+  document.getElementById('m-total').textContent   = total.toLocaleString('pt-BR');
+  document.getElementById('m-topsrc').textContent  = srcCnt[0]?.[0] || '—';
+  document.getElementById('m-topsrc-sub').textContent = srcCnt[0] ? `${srcCnt[0][1]} leads` : '—';
+  document.getElementById('m-fontes').textContent  = srcCnt.length;
+  document.getElementById('m-camp').textContent    = campCnt.length;
+  document.getElementById('m-dias').textContent    = uniqueDates;
+
+  // DONUT FONTE
+  const srcTop = srcCnt.slice(0, 6);
+  donut('srcChart', srcTop.map(x=>x[0]), srcTop.map(x=>x[1]), PALETTE);
+  buildLegend('srcLeg', srcTop.map(x=>x[0]), srcTop.map(x=>x[1]), PALETTE);
+
+  // DONUT MEDIUM
+  const medCnt = count(rows, 'utm_medium');
+  donut('medChart', medCnt.map(x=>x[0]), medCnt.map(x=>x[1]), PALETTE.slice(3));
+  buildLegend('medLeg', medCnt.map(x=>x[0]), medCnt.map(x=>x[1]), PALETTE.slice(3));
+
+  // CONTENT BARS
+  const contCnt = count(rows, 'utm_content').slice(0, 12);
+  const maxCont = contCnt[0]?.[1] || 1;
+  document.getElementById('contentBars').innerHTML = contCnt.map(([label, val], i) => `
+    <div class="bar-row">
+      <span class="bar-label" title="${label}">${label}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(val/maxCont*100).toFixed(1)}%;background:${PALETTE[i % PALETTE.length]}"></div>
+      </div>
+      <span class="bar-count">${val}</span>
+    </div>`).join('');
+
+  // GROWTH CHART
+  const dayMap = {};
+  rows.forEach(r => {
+    if (!r.subscribed_at) return;
+    const d = r.subscribed_at.split(' ')[0];
+    dayMap[d] = (dayMap[d] || 0) + 1;
+  });
+  const sortedDays = Object.keys(dayMap).sort();
+  lineChart('growthChart',
+    sortedDays.map(d => { const p = d.split(/[-\/]/); return p.length>=2 ? `${p[p.length-2]}/${p[p.length-1]}` : d; }),
+    sortedDays.map(d => dayMap[d])
+  );
+
+  // PROFESSOR CARDS
+  // ── LÓGICA CORRIGIDA ──────────────────────────────────────────────────────
+  // "juntas" = canal coletivo → aparece como "Juntas 🌐" (visão geral, não professora individual)
+  // utm_content com "ana" (sem "juntas") → Ana
+  // utm_content com "fernanda"            → Fernanda
+  // utm_content com "sonia"               → Sônia
+  // tudo mais                             → sem professora identificada
+
+  const profs = { ana: {name:'Ana', cls:'c-an', badge:'AN', leads:[], srcs:{}},
+                  fernanda: {name:'Fernanda', cls:'c-fe', badge:'FE', leads:[], srcs:{}},
+                  sonia: {name:'Sônia', cls:'c-so', badge:'SO', leads:[], srcs:{}},
+                  juntas: {name:'Juntas', cls:'c-jt', badge:'JT', leads:[], srcs:{}} };
+
+  let unidentified = 0;
+  rows.forEach(r => {
+    const p = detectProf(r);
+    if (p && profs[p]) {
+      profs[p].leads.push(r);
+      const s = (r.utm_source || 'desconhecido').toLowerCase();
+      profs[p].srcs[s] = (profs[p].srcs[s] || 0) + 1;
+    } else {
+      unidentified++;
+    }
+  });
+
+  const identifiedTotal = rows.length - unidentified;
+
+  const profGrid = document.getElementById('profGrid');
+  profGrid.innerHTML = Object.values(profs).map(p => {
+    const cnt = p.leads.length;
+    const pct = identifiedTotal > 0 ? Math.round(cnt / identifiedTotal * 100) : 0;
+    const topSrcs = Object.entries(p.srcs).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    return `
+    <div class="prof-card ${p.cls}">
+      <div class="prof-badge">${p.badge}</div>
+      <div class="prof-name">${p.name}</div>
+      <div class="prof-count">${cnt.toLocaleString('pt-BR')}</div>
+      <div class="prof-pct">${pct}% dos leads identificados</div>
+      <div class="prof-sources">
+        ${topSrcs.map(([s,v]) => `<div class="prof-src-row"><span>${s}</span><span>${v}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // ANALYSIS
+  const topSrc   = srcCnt[0];
+  const topMed   = medCnt[0];
+  const topProf  = Object.values(profs).filter(p=>p.name!=='Juntas').sort((a,b)=>b.leads.length-a.leads.length)[0];
+  const pctSrc   = Math.round(topSrc[1]/total*100);
+  const pctMed   = Math.round(topMed[1]/total*100);
+  const analyses = [
+    { color:'#1B6B45', text:`<strong>${topSrc[0]}</strong> é a principal fonte com ${topSrc[1]} leads (${pctSrc}% do total).` },
+    { color:'#1D4ED8', text:`O medium <strong>${topMed[0]}</strong> domina com ${topMed[1]} leads — ${pctMed}% do total.` },
+    { color:'#C2355E', text:`<strong>${topProf?.name || '—'}</strong> é a professora com mais leads identificados: ${topProf?.leads.length || 0} leads.` },
+    { color:'#B45309', text:`<strong>${unidentified} leads</strong> vieram de conteúdos sem professora identificada. Considere adicionar nome da professora nas UTMs.` },
+    { color:'#5B21B6', text:`<strong>juntas_canal_youtube</strong> (${profs.juntas.srcs['youtube']||0} leads) é um canal coletivo e aparece em visão geral "Juntas", não atribuído individualmente.` },
+  ];
+
+  document.getElementById('analysisGrid').innerHTML = analyses.map(a => `
+    <div class="analysis-item">
+      <span class="analysis-dot" style="background:${a.color}"></span>
+      <span>${a.text}</span>
+    </div>`).join('');
+
+  // RANKING TABLE
+  const rankMap = {};
+  rows.forEach(r => {
+    const key = [r.utm_source||'—', r.utm_medium||'—', r.utm_content||'—'].join('|||');
+    if (!rankMap[key]) rankMap[key] = { source: r.utm_source||'—', medium: r.utm_medium||'—', content: r.utm_content||'—', count: 0 };
+    rankMap[key].count++;
+  });
+  const ranked = Object.values(rankMap).sort((a,b)=>b.count-a.count);
+  const maxRank = ranked[0]?.count || 1;
+
+  document.getElementById('rankTable').innerHTML = ranked.map(r => {
+    const pct = Math.round(r.count/total*100);
+    const medClass = r.medium.includes('indica') ? 'pill-indicacao' : 'pill-social';
+    const color = r.source.includes('whatsapp') ? PALETTE[0] : r.source.includes('youtube') ? '#C2355E' : r.source.includes('instagram') ? PALETTE[1] : PALETTE[4];
+    return `<tr>
+      <td>${r.source}</td>
+      <td><span class="medium-pill ${medClass}">${r.medium}</span></td>
+      <td>${r.content}</td>
+      <td>${r.count}</td>
+      <td>
+        <div class="rank-bar-wrap">
+          <div class="rank-bar-fill" style="width:${(r.count/maxRank*100).toFixed(1)}%;background:${color}"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── STATUS ───────────────────────────────────────────────────────────────────
+function setStatus(state, text) {
+  const dot = document.getElementById('statusDot');
+  dot.className = 'dot' + (state === 'ok' ? '' : ` ${state}`);
+  document.getElementById('statusText').textContent = text;
+}
+
+// ─── LOAD DATA (múltiplos proxies para file://) ──────────────────────────────
+async function fetchCSV() {
+  // 1ª tentativa: direto (funciona em https://)
+  try {
+    const r = await fetch(CSV_URL_DIRECT, { signal: AbortSignal.timeout(6000) });
+    if (r.ok) { const t = await r.text(); if (t.length > 50) return t; }
+  } catch(_) {}
+  // Tenta cada proxy em sequência até um funcionar
+  for (const makeURL of PROXIES) {
+    try {
+      const proxyURL = makeURL(CSV_URL_DIRECT);
+      const r = await fetch(proxyURL, { signal: AbortSignal.timeout(10000) });
+      if (r.ok) {
+        const t = await r.text();
+        if (t.length > 50 && t.includes(',')) return t;
+      }
+    } catch(_) {}
+  }
+  throw new Error('Todos os proxies falharam. Verifique sua conexão.');
+}
+
+async function loadData() {
+  setStatus('loading', 'Carregando...');
+  try {
+    const text = await fetchCSV();
+    const rows = parseCSV(text);
+    if (!rows.length) throw new Error('Planilha vazia');
+    render(rows);
+    const now = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    setStatus('ok', `${rows.length} leads · atualizado ${now}`);
+    document.getElementById('footer').textContent = `Dashboard conectado ao Google Sheets · última atualização ${now} · próxima em 60s`;
+  } catch(e) {
+    setStatus('error', 'Erro ao carregar: ' + e.message);
+    document.getElementById('rankTable').innerHTML =
+      `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text3);font-family:var(--font-mono);font-size:12px">
+        Não foi possível carregar os dados.<br><small>${e.message}</small><br><br>
+        <span style="color:var(--text2)">Verifique se a planilha está publicada em Arquivo → Compartilhar → Publicar na web → CSV</span>
+      </td></tr>`;
+  }
+}
+
+loadData();
+setInterval(loadData, 60000);
+</script>
+</body>
+</html>
